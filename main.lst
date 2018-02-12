@@ -1,0 +1,196 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit,scanf,printf,fopen,fclose,fread,fprintf            
+     8                                  import exit msvcrt.dll    
+     9                                  import scanf msvcrt.dll
+    10                                  import printf msvcrt.dll
+    11                                  import fopen msvcrt.dll
+    12                                  import fread msvcrt.dll
+    13                                  import fclose msvcrt.dll
+    14                                  import fprintf msvcrt.dll
+    15                                  
+    16                                  ; our data is declared here (the variables needed by our program)
+    17                                  segment data use32 class=data
+    18                                      ; ...
+    19 00000000 <res 00000014>              file resb 20
+    20 00000014 00                          char db 0
+    21 00000015 257300                      format db "%s",0
+    22 00000018 256400                      format_int db "%d",0
+    23 0000001B 7200                        acces_1 db "r",0
+    24 0000001D 6100                        acces_2 db "a",0
+    25 0000001F 6F75747075742E7478-         output db "output.txt",0
+    25 00000028 7400               
+    26 0000002A <res 0000003C>              temporary resb 60
+    27 00000066 <res 00000064>              text resb 100
+    28 000000CA 506C6561736520696E-         msg_1 db "Please insert the file: ",0
+    28 000000D3 736572742074686520-
+    28 000000DC 66696C653A2000     
+    29 000000E3 506C6561736520696E-         msg_2 db "Please insert the special character: ",0
+    29 000000EC 736572742074686520-
+    29 000000F5 7370656369616C2063-
+    29 000000FE 68617261637465723A-
+    29 00000107 2000               
+    30 00000109 506C6561736520696E-         msg_3 db "Please insert n: ",0
+    30 00000112 73657274206E3A2000 
+    31 0000011B 4572726F7220647572-         msg_error db "Error during opening file!!!",0
+    31 00000124 696E67206F70656E69-
+    31 0000012D 6E672066696C652121-
+    31 00000136 2100               
+    32 00000138 00000000                    descriptor_1 dd 0
+    33 0000013C 00000000                    descriptor_2 dd 0
+    34 00000140 00                          len db 0
+    35 00000141 00                          n db 0
+    36                                      
+    37                                  ; our code starts here
+    38                                  segment code use32 class=code
+    39                                      start:
+    40                                          ; ...
+    41                                          
+    42                                          ;print the filename msg_1
+    43 00000000 68[CA000000]                    push dword msg_1
+    44 00000005 FF15[00000000]                  call [printf]
+    45 0000000B 83C404                          add esp, 4*1
+    46                                          
+    47                                          ;reading the filename
+    48 0000000E 68[00000000]                    push dword file
+    49 00000013 68[15000000]                    push dword format
+    50 00000018 FF15[00000000]                  call [scanf]
+    51 0000001E 83C408                          add esp, 4*2
+    52                                          
+    53                                          ;print the char msg
+    54 00000021 68[E3000000]                    push dword msg_2
+    55 00000026 FF15[00000000]                  call [printf]
+    56 0000002C 83C404                          add esp, 4*1
+    57                                          
+    58                                          ;read the character
+    59 0000002F 68[14000000]                    push dword char
+    60 00000034 68[15000000]                    push dword format
+    61 00000039 FF15[00000000]                  call [scanf]
+    62 0000003F 83C408                          add esp, 4*2
+    63                                          
+    64                                          ;print n msg
+    65 00000042 68[09010000]                    push dword msg_3
+    66 00000047 FF15[00000000]                  call [printf]
+    67 0000004D 83C404                          add esp, 4*1
+    68                                          
+    69 00000050 68[41010000]                    push dword n
+    70 00000055 68[18000000]                    push dword format_int
+    71 0000005A FF15[00000000]                  call [scanf]
+    72 00000060 83C408                          add esp, 4*2
+    73                                          
+    74                                          ;open the input file
+    75 00000063 68[1B000000]                    push dword acces_1
+    76 00000068 68[00000000]                    push dword file
+    77 0000006D FF15[00000000]                  call [fopen]
+    78 00000073 83C408                          add esp, 4*2
+    79                                          
+    80 00000076 A3[38010000]                    mov [descriptor_1],eax ;saving the descriptor
+    81 0000007B 83F800                          cmp eax,0 ;see if it is an error
+    82 0000007E 0F84B4000000                    je open_error
+    83                                          
+    84                                          ;open the output file
+    85 00000084 68[1D000000]                    push dword acces_2
+    86 00000089 68[1F000000]                    push dword output
+    87 0000008E FF15[00000000]                  call [fopen]
+    88 00000094 83C408                          add esp, 4*2
+    89                                          
+    90 00000097 A3[3C010000]                    mov [descriptor_2],eax
+    91                                          
+    92 0000009C B901000000                      mov ecx,1
+    93                                          repeta:
+    94                                              
+    95                                              ;read from file
+    96 000000A1 FF35[38010000]                      push dword [descriptor_1]
+    97 000000A7 6A32                                push dword 50
+    98 000000A9 6A01                                push dword 1
+    99 000000AB 68[2A000000]                        push dword temporary
+   100 000000B0 FF15[00000000]                      call [fread]
+   101 000000B6 83C410                              add esp, 4*4
+   102                                                          
+   103 000000B9 83F800                              cmp eax,0 ;in case we are done with the reading jump out of loop
+   104 000000BC 7439                                je stop
+   105                                              
+   106                                              ;preparations for solving
+   107 000000BE A2[40010000]                        mov [len],al ;going to use a loop that counts how many characters does a word have
+   108 000000C3 31C9                                xor ecx,ecx ;clear ecx
+   109 000000C5 8A0D[40010000]                      mov cl,[len] ;initialize ecx for loop
+   110 000000CB BE[2A000000]                        mov esi, temporary ;move in esi the temporary string address
+   111 000000D0 BF[66000000]                        mov edi, text ;move in edi the address of the string which we will save the edited result
+   112 000000D5 FC                                  cld ;clear dir flag
+   113 000000D6 31DB                                xor ebx,ebx ;clear ebx and edx registers
+   114 000000D8 31D2                                xor edx,edx
+   115                                              
+   116 000000DA EB1D                                jmp check ;jump to the chek loop
+   117                                              
+   118                                              back:            
+   119 000000DC 68[66000000]                        push dword text
+   120 000000E1 FF35[3C010000]                      push dword [descriptor_2]
+   121 000000E7 FF15[00000000]                      call [fprintf]
+   122 000000ED 83C408                              add esp, 4*2
+   123                                              
+   124 000000F0 B902000000                          mov ecx,2
+   125                                              
+   126 000000F5 E2AA                            loop repeta
+   127                                          stop:
+   128 000000F7 EB4D                            jmp ending;jump over the error printing
+   129                                          
+   130                                          check:;check what we have read
+   131 000000F9 AC                                      lodsb ;load char into al
+   132 000000FA 83F820                                  cmp eax,' ' ;see if it is space
+   133 000000FD 7403                                    je solve ;if it i we check and edit based of its number of digits
+   134 000000FF 43                                      inc ebx ;inc ebx otherwise and keeps counting
+   135 00000100 EB2F                                    jmp next
+   136                                                  solve: ;check and edit based of its number of digits
+   137 00000102 31D2                                        xor edx,edx;clear edx
+   138 00000104 8A15[41010000]                              mov dl,[n] ;put the minimum numbers of chars
+   139 0000010A 39D3                                        cmp ebx,edx ;compare
+   140 0000010C 7D19                                        jge word_done ;if it is ok we jump to out of solve loop
+   141 0000010E 29DA                                        sub edx,ebx ;find how many special chars to add 
+   142 00000110 51                                          push ecx ;save ecx for later
+   143 00000111 89D1                                        mov ecx,edx ;initialize chars loop
+   144                                                      chars:;stocks in text aditional special chars
+   145 00000113 A1[14000000]                                    mov eax,[char]
+   146 00000118 AA                                              stosb
+   147 00000119 4A                                              dec edx
+   148 0000011A 83FA00                                          cmp edx,0
+   149 0000011D 7505                                            jne end_chars
+   150 0000011F B901000000                                      mov ecx,1
+   151                                                          end_chars:
+   152 00000124 E2ED                                        loop chars 
+   153 00000126 59                                          pop ecx
+   154                                                      word_done:
+   155 00000127 B820000000                                  mov eax,' '
+   156 0000012C BB00000000                                  mov ebx,0
+   157                                                  next:
+   158 00000131 AA                                      stosb
+   159 00000132 E2C5                                loop check
+   160 00000134 EBA6                            jmp back
+   161                                          
+   162 00000136 EB0E                            jmp ending;jump over the error printing
+   163                                          
+   164                                          open_error:
+   165 00000138 68[1B010000]                    push dword msg_error
+   166 0000013D FF15[00000000]                  call [printf]
+   167 00000143 83C404                          add esp, 4
+   168                                          
+   169                                          ending:
+   170 00000146 FF35[38010000]                  push dword [descriptor_1]
+   171 0000014C FF15[00000000]                  call [fclose]
+   172 00000152 83C404                          add esp, 4
+   173                                          
+   174 00000155 FF35[3C010000]                  push dword [descriptor_2]
+   175 0000015B FF15[00000000]                  call [fclose]
+   176 00000161 83C404                          add esp, 4
+   177                                          
+   178                                          ; exit(0)
+   179 00000164 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+   180 00000166 FF15[00000000]                  call    [exit]       ; call exit to terminate the program
+   181                                          ;mod acces, nume_fisier, fopen
+   182                                          ;descriptor, fclose
+   183                                          ;descriptor, cate elemente citim, dimensiunea, variabla in care se face citirea, fread
+   184                                          ;const, var,..., format, descriptor, fprintf
+   185                                          ;descriptor, fclose
